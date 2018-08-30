@@ -1,11 +1,13 @@
 
-const remote = require('remote'); 
+const remote = require('remote');
 const dialog = remote.require('dialog');
 const app = remote.app;
 const Menu = remote.Menu;
 const MenuItem = remote.MenuItem;
 const fs = require('fs');
 const moment = require('moment');
+// old syntax to support this version of Electron 0.36 --> currently @ 2.0.2 (!!)
+const clipboard = require('electron').clipboard;
 
 /*
   GLOBALS, CONSTANTS, CLASSES
@@ -30,7 +32,7 @@ function Note(title, type, dt, location, content) {
   this.content = content;
 }
 
-/* 
+/*
   HELPER FUNCTIONS
 */
 hashCode = function(str){
@@ -139,7 +141,7 @@ function processClippings(rawClippingContent) {
       titles[titleHash].notes.push(note);
     } catch(err) {
       console.log("Note parsing warning: "+err);
-    } 
+    }
   }
 }
 
@@ -163,20 +165,24 @@ function loadTitle(title_hash) {
   $("#activeTitle").empty();
 
   var activeTitle = titles[title_hash];
-  $("#activeTitle").append(activeTitle.title);  
+  $("#activeTitle").append(activeTitle.title);
+
+  var clipboardText = "";
 
   for (i in activeTitle.notes) {
     var note = activeTitle.notes[i];
 
     console.log(note);
 
+    // easier to save to note-app after without all position/title clutter
     $("#notes").append(
       "<div class='note-item'>"+
         note.content
-      +"<div class='note-meta'>"+note.type+", Location "+note.location
       +"</div></div>"
-    );    
+    );
+    clipboardText = clipboardText + "\n" + jQuery(note.content).text();
   }
+  clipboard.writeText(activeTitle.title + "\n" + clipboardText);
 }
 
 /*
@@ -201,7 +207,7 @@ $(document).ready(function(){
       } else {
         console.log(err);
         dialog.showErrorBox(
-          "Invalid Device", 
+          "Invalid Device",
           "Clippings file could not be found or format is invalid."
         );
       }
